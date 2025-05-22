@@ -20,13 +20,13 @@ use OAuth2\Server;
 
 class OpenIDConnectServer {
 	private string $public_key;
-	private array $clients;
+	private ClientCredentialsStorage $clients;
 	private Router $router;
 	private ConsentStorage $consent_storage;
 
 	public function __construct( string $public_key, string $private_key, array $clients ) {
 		$this->public_key      = $public_key;
-		$this->clients         = $clients;
+		$this->clients         = new ClientCredentialsStorage( $clients );
 		$this->router          = new Router();
 		$this->consent_storage = new ConsentStorage();
 
@@ -38,7 +38,7 @@ class OpenIDConnectServer {
 
 		$server = new Server( new AuthorizationCodeStorage(), $config );
 		$server->addStorage( new PublicKeyStorage( $public_key, $private_key ), 'public_key' );
-		$server->addStorage( new ClientCredentialsStorage( $clients ), 'client_credentials' );
+		$server->addStorage( $this->clients, 'client_credentials' );
 		$server->addStorage( new UserClaimsStorage(), 'user_claims' );
 
 		// Declare rest routes.
@@ -50,7 +50,7 @@ class OpenIDConnectServer {
 		);
 		$this->router->add_rest_route(
 			'authorize',
-			new AuthorizeHandler( $server, $this->consent_storage ),
+			new AuthorizeHandler( $server, $this->consent_storage, $this->clients ),
 			array( 'GET', 'POST' ),
 			$this->expected_arguments_specification( 'authorize' ),
 		);
@@ -100,23 +100,31 @@ class OpenIDConnectServer {
 				);
 			case 'token':
 				return array(
-					'grant_type'    => array(
+					'grant_type'            => array(
 						'type'     => 'string',
 						'required' => true,
 					),
-					'client_id'     => array(
+					'client_id'             => array(
+						'type'     => 'string',
+						'required' => false,
+					),
+					'client_secret'         => array(
+						'type'     => 'string',
+						'required' => false,
+					),
+					'client_assertion'      => array(
+						'type'     => 'string',
+						'required' => false,
+					),
+					'client_assertion_type' => array(
+						'type'     => 'string',
+						'required' => false,
+					),
+					'redirect_uri'          => array(
 						'type'     => 'string',
 						'required' => true,
 					),
-					'client_secret' => array(
-						'type'     => 'string',
-						'required' => true,
-					),
-					'redirect_uri'  => array(
-						'type'     => 'string',
-						'required' => true,
-					),
-					'code'          => array(
+					'code'                  => array(
 						'type'     => 'string',
 						'required' => true,
 					),
