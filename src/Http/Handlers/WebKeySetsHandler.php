@@ -30,6 +30,8 @@ class WebKeySetsHandler extends RequestHandler {
 		$key = openssl_pkey_get_details( openssl_pkey_get_public( $this->public_key ) );
 
 		return array(
+			// We'll only ever have one key, so we can hardcode the kid - @funkypenguin
+			'kid' => '1',
 			'kty' => 'RSA',
 			'use' => 'sig',
 			'alg' => 'RS256',
