@@ -8,6 +8,7 @@ use OAuth2\Request;
 use OAuth2\Response;
 use OAuth2\Server as OAuth2Server;
 use OpenIDConnectServer\Http\RequestHandler;
+use OpenIDConnectServer\Storage\ClientCredentialsStorage;
 use OpenIDConnectServer\Storage\ConsentStorage;
 
 const OIDC_DEFAULT_MINIMAL_CAPABILITY = 'read'; // We want to authorize all WP users @funkypenguin
@@ -15,10 +16,12 @@ const OIDC_DEFAULT_MINIMAL_CAPABILITY = 'read'; // We want to authorize all WP u
 class AuthorizeHandler extends RequestHandler {
 	private OAuth2Server $server;
 	private ConsentStorage $consent_storage;
+	private ClientCredentialsStorage $clients;
 
-	public function __construct( OAuth2Server $server, ConsentStorage $consent_storage ) {
+	public function __construct( OAuth2Server $server, ConsentStorage $consent_storage, ClientCredentialsStorage $clients ) {
 		$this->server          = $server;
 		$this->consent_storage = $consent_storage;
+		$this->clients         = $clients;
 	}
 
 	public function handle( Request $request, Response $response ): Response {
@@ -44,10 +47,13 @@ class AuthorizeHandler extends RequestHandler {
 		$user = wp_get_current_user();
 
 		$client_id = $request->query( 'client_id', $request->request( 'client_id' ) );
-		if ( $this->consent_storage->needs_consent( $user->ID, $client_id ) ) {
-			if ( ! isset( $_POST['authorize'] ) || 'Authorize' !== $_POST['authorize'] ) {
-				$response->send();
-				exit;
+		if (
+			$this->clients->clientRequiresConsent( $client_id )
+			&& $this->consent_storage->needs_consent( $user->ID, $client_id )
+		) {
+			if ( ! isset( $_POST['authorize'] ) || __( 'Authorize', 'openid-connect-server' ) !== $_POST['authorize'] ) {
+				$response->setError( 403, 'user_authorization_required', 'This application requires your consent.' );
+				return $response;
 			}
 
 			$this->consent_storage->update_timestamp( $user->ID, $client_id );
