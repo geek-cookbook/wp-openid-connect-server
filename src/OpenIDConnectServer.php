@@ -4,6 +4,8 @@ namespace OpenIDConnectServer;
 
 use OAuth2\Request;
 use OAuth2\Response;
+use OAuth2\Storage\JwtAccessToken;
+use OpenIDConnectServer\Encryption\StrictJwt;
 use OpenIDConnectServer\Http\Handlers\AuthenticateHandler;
 use OpenIDConnectServer\Http\Handlers\AuthorizeHandler;
 use OpenIDConnectServer\Http\Handlers\ConfigurationHandler;
@@ -36,8 +38,11 @@ class OpenIDConnectServer {
 			'issuer'                => home_url( '/' ),
 		);
 
-		$server = new Server( new AuthorizationCodeStorage(), $config );
-		$server->addStorage( new PublicKeyStorage( $public_key, $private_key ), 'public_key' );
+		$server      = new Server( new AuthorizationCodeStorage(), $config );
+		$key_storage = new PublicKeyStorage( $public_key, $private_key );
+		$server->addStorage( $key_storage, 'public_key' );
+		// Use strict algorithm checks for every endpoint that validates JWT access tokens.
+		$server->addStorage( new JwtAccessToken( $key_storage, null, new StrictJwt() ), 'access_token' );
 		$server->addStorage( $this->clients, 'client_credentials' );
 		$server->addStorage( new UserClaimsStorage(), 'user_claims' );
 

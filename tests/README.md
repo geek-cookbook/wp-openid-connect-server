@@ -1,3 +1,11 @@
+# PHPUnit tests
+
+Run the JWT verification regression tests with:
+
+```shell
+composer test:unit
+```
+
 # End-to-end tests
 
 Running theses tests requires having [matrix-oidc-playground](https://github.com/Automattic/matrix-oidc-playground/) running in the same machine as the tests. Make sure to follow the setup instructions there before running the tests.

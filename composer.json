@@ -8,6 +8,7 @@
   "require-dev": {
     "dealerdirect/phpcodesniffer-composer-installer": "^0.7.2",
     "johnpbloch/wordpress": "^6.0",
+    "phpunit/phpunit": "^9.6",
     "squizlabs/php_codesniffer": "^3.7",
     "wp-coding-standards/wpcs": "dev-develop"
   },
@@ -18,13 +19,17 @@
   },
   "scripts": {
     "phpcs": "phpcs --standard=phpcs.xml",
-    "test": "cd tests && yarn && yarn start"
+    "test": "cd tests && yarn && yarn start",
+    "test:unit": "phpunit"
   },
   "config": {
     "sort-packages": true,
     "allow-plugins": {
       "johnpbloch/wordpress-core-installer": false,
       "dealerdirect/phpcodesniffer-composer-installer": true
+    },
+    "platform": {
+      "php": "7.4.33"
     }
   }
 }
